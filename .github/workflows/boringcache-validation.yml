@@ -1,0 +1,169 @@
+name: BoringCache IOTA validation
+on:
+  push:
+    branches: [boringcache-validation]
+    paths: [.github/workflows/boringcache-validation.yml]
+  workflow_dispatch:
+    inputs:
+      cli_version:
+        description: Optional exact CLI release override
+        type: string
+        default: ""
+permissions:
+  contents: read
+concurrency:
+  group: iota-cargo-validation
+  cancel-in-progress: false
+env:
+  CARGO_INCREMENTAL: '0'
+  CARGO_TERM_COLOR: never
+  CARGO_BUILD_JOBS: '4'
+  SCCACHE_CACHE_SIZE: 2G
+  SCCACHE_DIR: ${{ github.workspace }}/sccache
+  SCCACHE_IDLE_TIMEOUT: '0'
+jobs:
+  source:
+    name: Pin dependency resolution
+    if: github.repository == 'boringcache/notarization' && github.ref == 'refs/heads/boringcache-validation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: 06968cbc306df046ddd0ece11a2a7c048280a8c5
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
+        with:
+          toolchain: 1.98.0
+      - run: cargo generate-lockfile
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-lock
+          path: Cargo.lock
+          retention-days: 14
+  cold:
+    name: ${{ matrix.provider }} IOTA Linux cold
+    needs: source
+    if: github.repository == 'boringcache/notarization' && github.ref == 'refs/heads/boringcache-validation'
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [GitHub, BoringCache]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 160
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VALIDATION_PROVIDER: ${{ matrix.provider }}
+      VALIDATION_POLICY: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: operator
+          persist-credentials: false
+      - uses: ./operator/.github/actions/boringcache-setup
+      - name: Restore Cargo and compiler cache
+        if: matrix.provider == 'GitHub'
+        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            source/target
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/git/db
+            sccache
+          key: iota-cargo-${{ github.run_id }}
+          fail-on-cache-miss: false
+      - name: Configure BoringCache dependency caching
+        if: matrix.provider == 'BoringCache'
+        id: cache
+        uses: boringcache/one@90111526eb218a7f1e119ac2b29f765bd4d82734 # v1.21.0
+        with:
+          mode: archive
+          cache-profiles: dependencies
+          working-directory: source
+          cli-version: ${{ inputs.cli_version }}
+          trust-policy: publish
+          fail-on-cache-error: true
+      - name: Build and run the Linux Rust and Move checks
+        working-directory: source
+        run: /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" bash .github/boringcache-build.sh
+      - name: Save Cargo and compiler cache
+        if: matrix.provider == 'GitHub'
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            source/target
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/git/db
+            sccache
+          key: iota-cargo-${{ github.run_id }}
+      - name: Retain workload and product evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.provider }}-iota-cold
+          path: |
+            ${{ runner.temp }}/validation
+            ${{ steps.cache.outputs.evidence-path }}
+          retention-days: 14
+  warm:
+    name: ${{ matrix.provider }} IOTA Linux warm
+    needs: [source, cold]
+    if: github.repository == 'boringcache/notarization' && github.ref == 'refs/heads/boringcache-validation'
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [GitHub, BoringCache]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 160
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VALIDATION_PROVIDER: ${{ matrix.provider }}
+      VALIDATION_POLICY: read-only
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: operator
+          persist-credentials: false
+      - uses: ./operator/.github/actions/boringcache-setup
+      - name: Restore Cargo and compiler cache
+        if: matrix.provider == 'GitHub'
+        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            source/target
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/git/db
+            sccache
+          key: iota-cargo-${{ github.run_id }}
+          fail-on-cache-miss: true
+      - name: Configure BoringCache dependency caching
+        if: matrix.provider == 'BoringCache'
+        id: cache
+        uses: boringcache/one@90111526eb218a7f1e119ac2b29f765bd4d82734 # v1.21.0
+        with:
+          mode: archive
+          cache-profiles: dependencies
+          working-directory: source
+          cli-version: ${{ inputs.cli_version }}
+          trust-policy: restore
+          fail-on-cache-error: true
+      - name: Build and run the Linux Rust and Move checks
+        working-directory: source
+        run: /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" bash .github/boringcache-build.sh
+      
+      - name: Retain workload and product evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.provider }}-iota-warm
+          path: |
+            ${{ runner.temp }}/validation
+            ${{ steps.cache.outputs.evidence-path }}
+          retention-days: 14
