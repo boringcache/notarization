@@ -10,7 +10,11 @@ fi
 mapfile -t members < <(cargo metadata --locked --no-deps --format-version 1 | jq -r '.workspace_members[]')
 for member in "${members[@]}"; do "${compiler[@]}" check --locked -p "$member" --no-default-features; done
 for member in "${members[@]}"; do "${compiler[@]}" check --locked -p "$member"; done
-"${compiler[@]}" build --locked --workspace --tests --examples --release
+if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
+  boringcache cargo "--$VALIDATION_POLICY" --skip-restore build --locked --workspace --tests --examples --release
+else
+  "${compiler[@]}" build --locked --workspace --tests --examples --release
+fi
 
 iota-localnet start --with-faucet --with-grpc > "$RUNNER_TEMP/validation/iota.log" 2>&1 &
 for attempt in {1..60}; do
@@ -26,7 +30,7 @@ IOTA_NOTARIZATION_PKG_ID=$(notarization-move/scripts/publish_package.sh)
 export IOTA_NOTARIZATION_PKG_ID
 eval "$(audit-trail-move/scripts/publish_package.sh)"
 if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
-  boringcache cargo "--$VALIDATION_POLICY" --skip-restore test --locked --workspace --release -- --test-threads=1
+  boringcache cargo "--$VALIDATION_POLICY" --skip-restore --skip-save test --locked --workspace --release -- --test-threads=1
 else
   env RUSTC_WRAPPER=sccache cargo test --locked --workspace --release -- --test-threads=1
 fi

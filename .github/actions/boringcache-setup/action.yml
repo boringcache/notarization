@@ -31,4 +31,6 @@ runs:
         cp operator/.boringcache.toml source/.boringcache.toml
         cp operator/.github/boringcache-build.sh source/.github/boringcache-build.sh
         sed -i "s/VALIDATION_SEED/$GITHUB_RUN_ID/g" source/.boringcache.toml
+        printf '/.boringcache.toml\n/.github/boringcache-build.sh\n' >> source/.git/info/exclude
+        test -z "$(git -C source status --porcelain)"
         rustc -Vv > "$RUNNER_TEMP/validation/rustc.txt"
