@@ -1,8 +1,10 @@
 # IOTA cache validation
 
+Current workflows pin [One v1.30.0](https://github.com/boringcache/one/releases/tag/v1.30.0) at `a610ec5a564efd9b360925056dbade04deb5def6`. Measurements below are from v1.21.0.
+
 **Qualified, with publication errors to investigate.** All four cold and fresh-runner warm Linux workloads passed: feature checks, release builds, 129 Move tests, Rust tests and native examples. [Run and artifacts](https://github.com/boringcache/notarization/actions/runs/34326583419) · [Measurements](boringcache-validation.json).
 
-One v1.21.0 is pinned to `90111526eb218a7f1e119ac2b29f765bd4d82734` and uses GitHub OIDC. One manages target/dependency archives; the public sccache adapter provides native compiler caching. GitHub archives the same directories plus its local compiler cache. Source, Rust 1.98.0, sccache 0.17.0, dependency lockfile and local sandbox are identical.
+The measured runs used One v1.21.0 at `90111526eb218a7f1e119ac2b29f765bd4d82734` with GitHub OIDC. One manages target/dependency archives; the public sccache adapter provides native compiler caching. GitHub archives the same directories plus its local compiler cache. Source, Rust 1.98.0, sccache 0.17.0, dependency lockfile and local sandbox are identical.
 
 | Measurement | GitHub | BoringCache |
 |---|---:|---:|
