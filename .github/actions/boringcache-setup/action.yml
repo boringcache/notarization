@@ -14,10 +14,6 @@ runs:
     - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6
       with:
         tool: sccache@0.17.0
-    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        name: cargo-lock
-        path: source
     - name: Install local sandbox and build prerequisites
       shell: bash
       run: |
@@ -28,6 +24,7 @@ runs:
         curl -fsSL https://github.com/gnprice/toml-cli/releases/download/v0.2.3/toml-0.2.3-x86_64-linux.tar.gz | tar -xz --strip-components=1 -C "$RUNNER_TEMP/toml"
         echo "$RUNNER_TEMP/iota" >> "$GITHUB_PATH"
         echo "$RUNNER_TEMP/toml" >> "$GITHUB_PATH"
+        cp operator/.github/boringcache-Cargo.lock source/Cargo.lock
         cp operator/.boringcache.toml source/.boringcache.toml
         cp operator/.github/boringcache-build.sh source/.github/boringcache-build.sh
         sed -i "s/VALIDATION_SEED/$GITHUB_RUN_ID/g" source/.boringcache.toml
