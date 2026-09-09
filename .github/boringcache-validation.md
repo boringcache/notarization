@@ -1,11 +1,20 @@
 # IOTA cache validation
 
-Qualified for validation of Cargo target and native compiler reuse across the Linux Rust and Move checks. [Cold and warm run](https://github.com/boringcache/notarization/actions/runs/34326583419).
+**Qualified, with publication errors to investigate.** All four cold and fresh-runner warm Linux workloads passed: feature checks, release builds, 129 Move tests, Rust tests and native examples. [Run and artifacts](https://github.com/boringcache/notarization/actions/runs/34326583419) · [Measurements](boringcache-validation.json).
 
-One v1.21.0 is pinned to `90111526eb218a7f1e119ac2b29f765bd4d82734` and uses GitHub OIDC. One manages Cargo target/dependency archives; the public sccache adapter provides native compiler caching for the whole workload. The baseline uses GitHub archive caching with sccache.
+One v1.21.0 is pinned to `90111526eb218a7f1e119ac2b29f765bd4d82734` and uses GitHub OIDC. One manages target/dependency archives; the public sccache adapter provides native compiler caching. GitHub archives the same directories plus its local compiler cache. Source, Rust 1.98.0, sccache 0.17.0, dependency lockfile and local sandbox are identical.
 
-Both providers use upstream source `06968cbc306df046ddd0ece11a2a7c048280a8c5`, Rust 1.98.0, the committed validation lockfile, and the same local IOTA sandbox. They run per-member feature checks, release builds, Rust tests, Move tests and native examples. Cache-destructive intermediate cleans are removed for both providers.
+| Measurement | GitHub | BoringCache |
+|---|---:|---:|
+| Cold whole job | 64m41s | 64m25s |
+| Warm whole job | 28m32s | 29m43s |
+| Warm archive restore | 73 s | 37 s |
+| Cold archive publication | 45 s | 84 s |
 
-The first build exposed a repository constraint: its Rust build scripts update tracked Move history files, so typed Cargo target publication is withheld. The revised integration uses ordinary Cargo archives, matching the baseline’s restore semantics, plus native sccache. It preserves the generated files and lets Cargo validate freshness. Both cold jobs in the [diagnostic run](https://github.com/boringcache/notarization/actions/runs/34321934857) passed the full workload, including 129 Move tests, Rust tests and native examples. Its warm jobs were cancelled because target publication was not established. The revised cold/warm comparison is pending.
+BoringCache read **2.81 GB** during the warm run, including native compiler reads, versus GitHub's **4.90 GB** archive: 42.6% less cache data read. BoringCache published nothing during warm execution. Both providers reduced compiler requests from 4,000 cold to 123 warm. Native Rust hits/misses were 7/18 with BoringCache and 5/20 with GitHub. Cold whole-job speed was similar; GitHub was faster warm in this sample.
 
-Scope is Linux native CI. Windows, wasm and a later upstream revision are not measured by this workflow. Results will include total workload time, restore/publication costs and storage evidence; they will not assume every phase is faster than GitHub.
+The repository's build scripts modify tracked Move history and lock files. Typed Cargo target publication is therefore withheld. This integration archives the directories and lets Cargo check freshness. The 10.87 GB target snapshot published successfully and restored on the fresh runner.
+
+The cold proxy logged **two HTTP 422 metadata write errors for a missing blob**. Strict shutdown and archive publication subsequently succeeded, but the cause and individual blob recovery remain unverified. Warm backend errors were zero. Warm sccache also reports 18 write errors while configured `READ_ONLY`; backend writes were zero. The report retains both tool and backend counters.
+
+These are single samples with fresh tags in a shared workspace. Physical storage savings, later revisions, Windows, wasm and local-machine reuse are not measured. The demonstrated fit is retained Cargo state, lower restore traffic and native integration; the publication errors need investigation before a reliability claim.

@@ -1,0 +1,222 @@
+{
+  "date": "2026-09-09",
+  "run_id": 34326583419,
+  "run_url": "https://github.com/boringcache/notarization/actions/runs/34326583419",
+  "source_revision": "06968cbc306df046ddd0ece11a2a7c048280a8c5",
+  "rust": "1.98.0",
+  "sccache": "0.17.0",
+  "one": {
+    "version": "1.21.0",
+    "sha": "90111526eb218a7f1e119ac2b29f765bd4d82734",
+    "auth": "GitHub OIDC"
+  },
+  "archives": [
+    {
+      "tag": "iota-notarization-34326583419-git-db-branch-boringcache-validation-ubuntu-24-x86_64",
+      "compressed_bytes": 443263389,
+      "blob_count": 92,
+      "file_count": 210
+    },
+    {
+      "tag": "iota-notarization-34326583419-registry-cache-branch-boringcache-validation-ubuntu-24-x86_64",
+      "compressed_bytes": 137875166,
+      "blob_count": 26,
+      "file_count": 918
+    },
+    {
+      "tag": "iota-notarization-34326583419-registry-index-branch-boringcache-validation-ubuntu-24-x86_64",
+      "compressed_bytes": 2448781,
+      "blob_count": 5,
+      "file_count": 1354
+    },
+    {
+      "tag": "iota-notarization-34326583419-target-branch-boringcache-validation-ubuntu-24-x86_64",
+      "compressed_bytes": 2222829581,
+      "blob_count": 1493,
+      "file_count": 28234
+    }
+  ],
+  "compiler_sessions": [
+    {
+      "read_only": false,
+      "tool": {
+        "cache_read_bytes": 824691,
+        "cache_write_bytes": 1804487266,
+        "cache_write_count": 3467,
+        "cache_read_hit_count": 33,
+        "cache_read_miss_count": 3482,
+        "cache_read_error_count": 0,
+        "cache_write_error_count": 0,
+        "cache_write_degraded_count": 0
+      },
+      "backend_cache_errors": 2,
+      "backend_upsert_errors": 2
+    },
+    {
+      "read_only": true,
+      "tool": {
+        "cache_read_bytes": 4899354,
+        "cache_write_bytes": 0,
+        "cache_write_count": 0,
+        "cache_read_hit_count": 7,
+        "cache_read_miss_count": 18,
+        "cache_read_error_count": 0,
+        "cache_write_error_count": 0,
+        "cache_write_degraded_count": 0
+      },
+      "backend_cache_errors": 0
+    }
+  ],
+  "warm_cache_bytes_read": {
+    "GitHub": 4901464879,
+    "BoringCache": 2811316271,
+    "BoringCache_native_compiler": 4899354
+  },
+  "reliability": {
+    "cold_backend_errors": 2,
+    "status": 422,
+    "message": "blob missing",
+    "digest": "sha256:624433dd70dcd9984a46f94e18557e939a5b4492c6f8b2943af9ae8a9da215e5",
+    "timestamps": [
+      "2026-09-09T08:54:05.4706712Z",
+      "2026-09-09T08:54:05.9506004Z"
+    ],
+    "strict_proxy_shutdown": "success",
+    "archive_publication": "success",
+    "individual_blob_recovery": "not independently verified",
+    "root_cause": "unresolved",
+    "warm_backend_errors": 0,
+    "warm_sccache_write_errors": 18,
+    "warm_write_error_context": "sccache was configured READ_ONLY; the backend received no writes."
+  },
+  "scope": {
+    "workload": "Linux feature checks, release builds, 129 Move tests, Rust tests and native examples",
+    "source_clean_adjustment": "Target and dependency archives are used because build scripts modify tracked Move history and lock files.",
+    "unmeasured": [
+      "Windows",
+      "wasm",
+      "later upstream revision",
+      "per-prospect unique physical storage"
+    ],
+    "cold_meaning": "Fresh tags in a shared workspace; underlying content may already exist."
+  },
+  "lock_sha256": "c76238e4add4a2c2f64f512130d18c5f11d66c4caafe989f34b22fba3b347e19",
+  "measurements": [
+    {
+      "provider": "BoringCache",
+      "phase": "cold",
+      "job_id": 102385133977,
+      "conclusion": "success",
+      "whole_job_seconds": 3865,
+      "workload_seconds": 3748.0,
+      "steps": [
+        {
+          "name": "Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 25
+        },
+        {
+          "name": "Configure BoringCache Cargo archives",
+          "seconds": 1
+        },
+        {
+          "name": "Build and run the Linux Rust and Move checks",
+          "seconds": 3749
+        },
+        {
+          "name": "Post Configure BoringCache Cargo archives",
+          "seconds": 84
+        },
+        {
+          "name": "Post Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "provider": "GitHub",
+      "phase": "cold",
+      "job_id": 102385134264,
+      "conclusion": "success",
+      "whole_job_seconds": 3881,
+      "workload_seconds": 3795.0,
+      "steps": [
+        {
+          "name": "Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 33
+        },
+        {
+          "name": "Restore Cargo and compiler cache",
+          "seconds": 0
+        },
+        {
+          "name": "Build and run the Linux Rust and Move checks",
+          "seconds": 3796
+        },
+        {
+          "name": "Save Cargo and compiler cache",
+          "seconds": 45
+        },
+        {
+          "name": "Post Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "provider": "BoringCache",
+      "phase": "warm",
+      "job_id": 102404129565,
+      "conclusion": "success",
+      "whole_job_seconds": 1783,
+      "workload_seconds": 1711.23,
+      "steps": [
+        {
+          "name": "Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 27
+        },
+        {
+          "name": "Configure BoringCache Cargo archives",
+          "seconds": 37
+        },
+        {
+          "name": "Build and run the Linux Rust and Move checks",
+          "seconds": 1713
+        },
+        {
+          "name": "Post Configure BoringCache Cargo archives",
+          "seconds": 0
+        },
+        {
+          "name": "Post Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "provider": "GitHub",
+      "phase": "warm",
+      "job_id": 102404129616,
+      "conclusion": "success",
+      "whole_job_seconds": 1712,
+      "workload_seconds": 1602.56,
+      "steps": [
+        {
+          "name": "Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 27
+        },
+        {
+          "name": "Restore Cargo and compiler cache",
+          "seconds": 73
+        },
+        {
+          "name": "Build and run the Linux Rust and Move checks",
+          "seconds": 1604
+        },
+        {
+          "name": "Post Run ./operator/.github/actions/boringcache-setup",
+          "seconds": 0
+        }
+      ]
+    }
+  ]
+}
