@@ -3,18 +3,10 @@ set -euo pipefail
 mkdir -p "$RUNNER_TEMP/validation"
 git rev-parse HEAD > "$RUNNER_TEMP/validation/source.txt"
 sha256sum Cargo.lock > "$RUNNER_TEMP/validation/lock.txt"
-compiler=(env RUSTC_WRAPPER=sccache cargo)
-if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
-  compiler=(boringcache cargo "--$VALIDATION_POLICY" --skip-save)
-fi
 mapfile -t members < <(cargo metadata --locked --no-deps --format-version 1 | jq -r '.workspace_members[]')
-for member in "${members[@]}"; do "${compiler[@]}" check --locked -p "$member" --no-default-features; done
-for member in "${members[@]}"; do "${compiler[@]}" check --locked -p "$member"; done
-if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
-  boringcache cargo "--$VALIDATION_POLICY" --skip-restore build --locked --workspace --tests --examples --release
-else
-  "${compiler[@]}" build --locked --workspace --tests --examples --release
-fi
+for member in "${members[@]}"; do cargo check --locked -p "$member" --no-default-features; done
+for member in "${members[@]}"; do cargo check --locked -p "$member"; done
+cargo build --locked --workspace --tests --examples --release
 
 iota-localnet start --with-faucet --with-grpc > "$RUNNER_TEMP/validation/iota.log" 2>&1 &
 for attempt in {1..60}; do
@@ -29,14 +21,13 @@ test "$(iota client active-env --json | jq -r '.')" = localnet
 IOTA_NOTARIZATION_PKG_ID=$(notarization-move/scripts/publish_package.sh)
 export IOTA_NOTARIZATION_PKG_ID
 eval "$(audit-trail-move/scripts/publish_package.sh)"
-if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
-  boringcache cargo "--$VALIDATION_POLICY" --skip-restore --skip-save test --locked --workspace --release -- --test-threads=1
-else
-  env RUSTC_WRAPPER=sccache cargo test --locked --workspace --release -- --test-threads=1
-fi
+cargo test --locked --workspace --release -- --test-threads=1
 cargo metadata --locked --format-version 1 --manifest-path examples/Cargo.toml |
   jq -r '.packages[] | select(.name == "examples") | .targets[].name' |
   awk '$1 ~ /[0-9].*/' |
   parallel -k -j 4 --retries 3 --joblog "$RUNNER_TEMP/validation/examples.log" ./target/release/examples/{}
 export IOTA_GENESIS_PATH="$HOME/.iota/iota_config/genesis.blob"
 ./examples/poi/run.sh
+
+git status --short > "$RUNNER_TEMP/validation/generated-state.txt"
+sccache --show-stats > "$RUNNER_TEMP/validation/sccache.txt"

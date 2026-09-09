@@ -18,6 +18,8 @@ env:
   CARGO_INCREMENTAL: '0'
   CARGO_TERM_COLOR: never
   CARGO_BUILD_JOBS: '4'
+  CC: sccache cc
+  CXX: sccache c++
   SCCACHE_CACHE_SIZE: 2G
   SCCACHE_DIR: ${{ github.workspace }}/sccache
   SCCACHE_IDLE_TIMEOUT: '0'
@@ -55,20 +57,25 @@ jobs:
             sccache
           key: iota-cargo-${{ github.run_id }}
           fail-on-cache-miss: false
-      - name: Configure BoringCache dependency caching
+      - name: Configure BoringCache Cargo archives
         if: matrix.provider == 'BoringCache'
         id: cache
         uses: boringcache/one@90111526eb218a7f1e119ac2b29f765bd4d82734 # v1.21.0
         with:
           mode: archive
-          cache-profiles: dependencies
+          cache-profiles: cargo
           working-directory: source
           cli-version: ${{ inputs.cli_version }}
           trust-policy: publish
           fail-on-cache-error: true
       - name: Build and run the Linux Rust and Move checks
         working-directory: source
-        run: /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" bash .github/boringcache-build.sh
+        run: |
+          if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
+            /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" boringcache sccache "--$VALIDATION_POLICY" -- bash .github/boringcache-build.sh
+          else
+            /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" env RUSTC_WRAPPER=sccache bash .github/boringcache-build.sh
+          fi
       - name: Save Cargo and compiler cache
         if: matrix.provider == 'GitHub'
         uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -123,20 +130,26 @@ jobs:
             sccache
           key: iota-cargo-${{ github.run_id }}
           fail-on-cache-miss: true
-      - name: Configure BoringCache dependency caching
+      - name: Configure BoringCache Cargo archives
         if: matrix.provider == 'BoringCache'
         id: cache
         uses: boringcache/one@90111526eb218a7f1e119ac2b29f765bd4d82734 # v1.21.0
         with:
           mode: archive
-          cache-profiles: dependencies
+          cache-profiles: cargo
           working-directory: source
           cli-version: ${{ inputs.cli_version }}
           trust-policy: restore
+          fail-on-cache-miss: true
           fail-on-cache-error: true
       - name: Build and run the Linux Rust and Move checks
         working-directory: source
-        run: /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" bash .github/boringcache-build.sh
+        run: |
+          if [[ "$VALIDATION_PROVIDER" == BoringCache ]]; then
+            /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" boringcache sccache "--$VALIDATION_POLICY" -- bash .github/boringcache-build.sh
+          else
+            /usr/bin/time -v -o "$RUNNER_TEMP/validation/build-time.txt" env RUSTC_WRAPPER=sccache bash .github/boringcache-build.sh
+          fi
       
       - name: Retain workload and product evidence
         if: always()

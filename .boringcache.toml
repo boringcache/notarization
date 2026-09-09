@@ -1,7 +1,6 @@
 workspace = "boringcache/benchmarks"
 
-[entries.cargo-target]
-kind = "cargo-target"
+[entries.build-target]
 tag = "iota-notarization-VALIDATION_SEED-target"
 path = "target"
 
@@ -15,15 +14,8 @@ tag = "iota-notarization-VALIDATION_SEED-registry-index"
 tag = "iota-notarization-VALIDATION_SEED-git-db"
 
 [profiles.cargo]
-entries = ["cargo-target", "cargo-git-db"]
-
-[profiles.dependencies]
-entries = ["cargo-registry-cache", "cargo-registry-index"]
-
-[adapters.cargo]
-profiles = ["cargo"]
-compiler-cache = "sccache"
-fail-on-cache-error = true
+entries = ["build-target", "cargo-registry-cache", "cargo-registry-index", "cargo-git-db"]
 
 [adapters.sccache]
 tag = "iota-notarization-VALIDATION_SEED-rust"
+fail-on-cache-error = true
